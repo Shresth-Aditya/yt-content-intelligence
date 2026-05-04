@@ -1,4 +1,7 @@
 import sqlite3
+from logger import setup_logger
+
+logger = setup_logger()
 
 def create_table():
     conn = sqlite3.connect("db.sqlite")
@@ -12,7 +15,6 @@ def create_table():
         published_at TEXT
     )
     """)
-    
     conn.commit()
     conn.close()
 
@@ -29,6 +31,7 @@ def insert_videos(videos):
             video["description"],
             video["published_at"]
         ))
-
+    
     conn.commit()
     conn.close()
+    logger.info(f"Inserted {len(videos)} videos into the database")

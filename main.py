@@ -1,15 +1,30 @@
 from extract import get_channel_videos
 from transform import transform_video_data
 from load import create_table, insert_videos
+from channel_discovery import get_channel_ids_for_niche
+from logger import setup_logger
 
-CHANNEL_ID = "UC8butISFwT-Wl7EV0hUK0BQ"
+logger = setup_logger()
+
+def run_pipeline_for_channel(channel_id):
+    raw = get_channel_videos(channel_id)
+    transformed = transform_video_data(raw)
+    insert_videos(transformed)
 
 def run_pipeline():
-    raw = get_channel_videos(CHANNEL_ID)
-    transformed = transform_video_data(raw)
+    
+    niche = "Python"
+    channel_ids = get_channel_ids_for_niche(niche)
+    logger.info(f"Filtered {len(channel_ids)} channels")
+    create_table()  # only once
 
-    create_table()
-    insert_videos(transformed)
+    for channel_id in channel_ids:
+        logger.info(f"\nProcessing channel: {channel_id}")
+
+        try:
+            run_pipeline_for_channel(channel_id)
+        except Exception as e:
+            logger.error(f"Error with {channel_id}: {e}")
 
 if __name__ == "__main__":
     run_pipeline()

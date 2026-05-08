@@ -1,7 +1,6 @@
 from channel_discovery import (
     get_channel_ids_for_niche
 )
-
 from logger import setup_logger
 
 logger = setup_logger()

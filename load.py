@@ -1,37 +1,57 @@
 import sqlite3
 from logger import setup_logger
+from database import get_connection
+from logger import setup_logger
 
 logger = setup_logger()
 
 def create_table():
-    conn = sqlite3.connect("db.sqlite")
+
+    conn = get_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS videos (
         video_id TEXT PRIMARY KEY,
+        channel_id TEXT,
         title TEXT,
         description TEXT,
-        published_at TEXT
+        published_at TEXT,
+        FOREIGN KEY (channel_id) REFERENCES channels(channel_id)
     )
     """)
+
     conn.commit()
     conn.close()
+
 
 def insert_videos(videos):
-    conn = sqlite3.connect("db.sqlite")
-    cursor = conn.cursor()
 
+    conn = get_connection()
+
+    cursor = conn.cursor()
     for video in videos:
+
         cursor.execute("""
-        INSERT OR IGNORE INTO videos VALUES (?, ?, ?, ?)
+        INSERT OR IGNORE INTO videos
+        VALUES (?, ?, ?, ?, ?)
         """, (
+
             video["video_id"],
+
+            video["channel_id"],
+
             video["title"],
+
             video["description"],
+
             video["published_at"]
         ))
-    
+
     conn.commit()
     conn.close()
-    logger.info(f"Inserted {len(videos)} videos into the database")
+
+    logger.info(
+        "Inserted %d videos into database",
+        len(videos)
+    )

@@ -8,7 +8,7 @@ logger = setup_logger()
 
 def run_pipeline_for_channel(channel_id):
     raw = get_channel_videos(channel_id)
-    transformed = transform_video_data(raw)
+    transformed = transform_video_data(raw,channel_id)
     insert_videos(transformed)
 
 def run_pipeline():

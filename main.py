@@ -1,8 +1,8 @@
 from extract import get_channel_videos
 from transform import transform_video_data
 from load import create_table, insert_videos
-from channel_discovery import get_channel_ids_for_niche
 from logger import setup_logger
+from database import get_all_channel_ids
 
 logger = setup_logger()
 
@@ -13,10 +13,13 @@ def run_pipeline_for_channel(channel_id):
 
 def run_pipeline():
     
-    niche = "Python"
-    channel_ids = get_channel_ids_for_niche(niche)
-    logger.info(f"Filtered {len(channel_ids)} channels")
     create_table()  # only once
+
+    channel_ids = get_all_channel_ids()
+    logger.info(
+        "Loaded %d channels from database",
+        len(channel_ids)
+    )
 
     for channel_id in channel_ids:
         logger.info(f"\nProcessing channel: {channel_id}")

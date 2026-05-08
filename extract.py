@@ -16,7 +16,8 @@ def get_channel_videos(channel_id):
         "channelId": channel_id,
         "part": "snippet",
         "maxResults": 10,
-        "order": "date"
+        "order": "date",
+        "type": "video" 
     }
     
     response = requests.get(url, params=params)

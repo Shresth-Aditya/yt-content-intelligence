@@ -1,6 +1,6 @@
 from extract import get_channel_videos
 from transform import transform_video_data
-from load import create_table, insert_videos
+from load import create_videos_table, insert_videos
 from logger import setup_logger
 from database import get_all_channel_ids
 
@@ -13,7 +13,7 @@ def run_pipeline_for_channel(channel_id):
 
 def run_pipeline():
     
-    create_table()  # only once
+    create_videos_table()  # only once
 
     channel_ids = get_all_channel_ids()
     logger.info(

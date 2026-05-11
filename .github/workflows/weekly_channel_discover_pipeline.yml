@@ -1,12 +1,15 @@
-name: Daily YouTube Pipeline
+name: Weekly Channel Discovery Pipeline
 
 on:
   schedule:
-    - cron: "30 3 * * *"
+    # Runs every Monday at 9:00 AM IST
+    # (03:30 UTC)
+    - cron: "30 3 * * 1"
+
   workflow_dispatch:
 
 jobs:
-  run-pipeline:
+  run-channel-discovery:
     runs-on: ubuntu-24.04
 
     steps:
@@ -23,8 +26,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run pipeline
+      - name: Run channel discovery pipeline
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
-        run: python main.py
+        run: python channel_discovery_pipeline.py

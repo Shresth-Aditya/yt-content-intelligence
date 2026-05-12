@@ -43,6 +43,60 @@ def create_channels_table():
     finally:
         release_connection(conn)
 
+def create_pipeline_runs_table():
+
+    conn = get_connection()
+
+    try:
+        with conn.cursor() as cursor:
+
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS pipeline_runs (
+                    id SERIAL PRIMARY KEY,
+                    execution_time_seconds DOUBLE PRECISION,
+                    videos_processed INTEGER,
+                    status VARCHAR(20),
+                    run_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+                )
+            """)
+
+            conn.commit()
+    finally:
+        release_connection(conn)
+
+def insert_pipeline_run(
+    execution_time_seconds,
+    videos_processed,
+    status
+):
+
+    conn = get_connection()
+
+    try:
+        with conn.cursor() as cursor:
+
+            cursor.execute("""
+                INSERT INTO pipeline_runs (
+                    execution_time_seconds,
+                    videos_processed,
+                    status
+                )
+                VALUES (%s, %s, %s)
+                RETURNING id, run_date
+            """, (
+                execution_time_seconds,
+                videos_processed,
+                status
+            ))
+
+            run_id, run_date = cursor.fetchone()
+
+        conn.commit()
+        return run_id, run_date
+
+    finally:
+        release_connection(conn)
+
 def insert_channels(channels, niche):
     
     if not channels:

@@ -28,3 +28,10 @@ jobs:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: python main.py
+
+      - name: Publish pipeline summary
+        if: always()
+        run: |
+          if [ -f pipeline_summary.md ]; then
+            cat pipeline_summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi

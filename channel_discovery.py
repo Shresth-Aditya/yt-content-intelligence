@@ -3,7 +3,7 @@ import os
 from typing import Counter
 import requests
 from logger import setup_logger
-from database import create_channels_table, insert_channels
+from database import insert_channels
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -12,70 +12,79 @@ logger = setup_logger()
 YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 BASE_URL = "https://www.googleapis.com/youtube/v3"
 
+
 def discover_channel_ids_from_niche(
     niche,
-    max_results=20
+    max_results_per_page=50,
+    max_pages=2
 ):
     """
     Search videos for a niche
-    Extract unique channel IDs
+    Extract unique channel IDs across multiple pages
     """
 
     url = f"{BASE_URL}/search"
-
-    params = {
-        "key": YOUTUBE_API_KEY,
-        "q": niche,
-        "part": "snippet",
-        "type": "video",
-        "maxResults": max_results
-    }
+    unique_channel_ids = set()
+    next_page_token = None
+    total_videos = 0
 
     try:
 
-        response = requests.get(
-            url,
-            params=params
-        )
+        for page_number in range(max_pages):
 
-        response.raise_for_status()
+            params = {
+                "key": YOUTUBE_API_KEY,
+                "q": niche,
+                "part": "snippet",
+                "type": "video",
+                "maxResults": max_results_per_page
+            }
 
-        data = response.json()
+            # Add page token after first page
+            if next_page_token:
+                params["pageToken"] = next_page_token
 
-        items = data.get("items", [])
+            response = requests.get(
+                url,
+                params=params
+            )
 
-        total_videos = len(items)
+            response.raise_for_status()
 
-        # Extract channel IDs
-        raw_channel_ids = [
-            item["snippet"]["channelId"]
-            for item in items
-        ]
+            data = response.json()
 
-        # Count frequency
-        channel_counts = Counter(
-            raw_channel_ids
-        )
+            items = data.get("items", [])
 
-        # Unique channel IDs
-        unique_channel_ids = list(
-            channel_counts.keys()
-        )
+            total_videos += len(items)
 
-        logger.debug(
-            "Total videos fetched: %d",
-            total_videos
-        )
+            # Extract channel IDs
+            for item in items:
 
-        logger.debug(
-            "Unique channels found: %d",
-            len(unique_channel_ids)
-        )
+                channel_id = item["snippet"]["channelId"]
 
-        logger.debug(
-            "Channel frequency map: %s",
-            dict(channel_counts)
-        )
+                unique_channel_ids.add(
+                    channel_id
+                )
+
+            logger.info(
+                "Page %d fetched with %d videos",
+                page_number + 1,
+                len(items)
+            )
+
+            # Get next page token
+            next_page_token = data.get(
+                "nextPageToken"
+            )
+
+            # Stop if no more pages
+            if not next_page_token:
+
+                logger.info(
+                    "No more pages available"
+                )
+
+                break
 
         logger.info(
             "Discovered %d unique channels from %d videos for niche: %s",
@@ -84,7 +93,7 @@ def discover_channel_ids_from_niche(
             niche
         )
 
-        return unique_channel_ids
+        return list(unique_channel_ids)
 
     except Exception as e:
 
@@ -282,8 +291,6 @@ def get_channel_ids_for_niche(
     )
 
     # Step 4
-    create_channels_table()
-
     insert_channels(
         filtered_channels,
         niche

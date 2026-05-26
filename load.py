@@ -8,31 +8,6 @@ from logger import setup_logger
 
 logger = setup_logger()
 
-def create_videos_table():
-
-    conn = get_connection()
-
-    try:
-
-        with conn.cursor() as cursor:
-
-            cursor.execute("""
-                CREATE TABLE IF NOT EXISTS videos (
-                    video_id TEXT PRIMARY KEY,
-                    channel_id TEXT,
-                    title TEXT,
-                    description TEXT,
-                    published_at TIMESTAMP,
-                    FOREIGN KEY (channel_id)
-                        REFERENCES channels(channel_id)
-                )
-            """)
-
-        conn.commit()
-
-    finally:
-        release_connection(conn)
-
 def insert_videos(videos):
 
     if not videos:
@@ -73,6 +48,165 @@ def insert_videos(videos):
 
         logger.info(
             "Inserted %d videos into database",
+            len(videos)
+        )
+
+    finally:
+        release_connection(conn)
+
+def insert_video_daily_metrics(metrics, run_id):
+
+    if not metrics:
+        return
+
+    conn = get_connection()
+
+    try:
+
+        query = """
+            INSERT INTO fact_video_daily_metrics (
+                video_id,
+                views,
+                likes,
+                comments,
+                snapshot_date,
+                snapshot_time,
+                run_id
+            )
+            VALUES %s
+            ON CONFLICT (video_id, snapshot_date)
+            DO NOTHING
+        """
+
+        data = [
+            (
+                metric["video_id"],
+                metric["views"],
+                metric["likes"],
+                metric["comments"],
+                metric["snapshot_date"],
+                metric["snapshot_time"],
+                run_id
+            )
+            for metric in metrics
+        ]
+
+        with conn.cursor() as cursor:
+            execute_values(cursor, query, data)
+
+        conn.commit()
+
+        logger.info(
+            "Upserted %d video daily metric rows into database",
+            len(metrics)
+        )
+
+    finally:
+        release_connection(conn)
+
+def upsert_dim_channels(channels, run_id):
+
+    if not channels:
+        return
+
+    conn = get_connection()
+
+    try:
+
+        query = """
+            INSERT INTO dim_channels (
+                channel_id,
+                channel_name,
+                description,
+                run_id
+            )
+            VALUES %s
+            ON CONFLICT (channel_id)
+            DO UPDATE SET
+                channel_name = COALESCE(
+                    NULLIF(EXCLUDED.channel_name, ''),
+                    dim_channels.channel_name
+                ),
+                description = COALESCE(
+                    NULLIF(EXCLUDED.description, ''),
+                    dim_channels.description
+                ),
+                run_id = EXCLUDED.run_id
+        """
+
+        data = [
+            (
+                channel["channel_id"],
+                channel["channel_name"],
+                channel["description"],
+                run_id
+            )
+            for channel in channels
+        ]
+
+        with conn.cursor() as cursor:
+            execute_values(cursor, query, data)
+
+        conn.commit()
+
+        logger.info(
+            "Upserted %d channels into dim_channels",
+            len(channels)
+        )
+
+    finally:
+        release_connection(conn)
+
+def upsert_dim_videos(videos, run_id):
+
+    if not videos:
+        return
+
+    conn = get_connection()
+
+    try:
+
+        query = """
+            INSERT INTO dim_videos (
+                video_id,
+                title,
+                description,
+                published_at,
+                channel_id,
+                niche,
+                run_id
+            )
+            VALUES %s
+            ON CONFLICT (video_id)
+            DO UPDATE SET
+                title = EXCLUDED.title,
+                description = EXCLUDED.description,
+                published_at = EXCLUDED.published_at,
+                channel_id = EXCLUDED.channel_id,
+                niche = EXCLUDED.niche,
+                run_id = EXCLUDED.run_id
+        """
+
+        data = [
+            (
+                video["video_id"],
+                video["title"],
+                video["description"],
+                video["published_at"],
+                video["channel_id"],
+                video["niche"],
+                run_id
+            )
+            for video in videos
+        ]
+
+        with conn.cursor() as cursor:
+            execute_values(cursor, query, data)
+
+        conn.commit()
+
+        logger.info(
+            "Upserted %d videos into dim_videos",
             len(videos)
         )
 

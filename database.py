@@ -20,30 +20,37 @@ def get_connection():
 def release_connection(conn):
     pool.putconn(conn)
 
-def create_channels_table():
+def start_pipeline_run():
 
     conn = get_connection()
+
     try:
         with conn.cursor() as cursor:
 
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS channels (
-                    channel_id TEXT PRIMARY KEY,
-                    channel_name TEXT,
-                    description TEXT,
-                    subscribers BIGINT,
-                    total_views BIGINT,
-                    video_count INTEGER,
-                    niche TEXT,
-                    discovered_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                INSERT INTO pipeline_runs (
+                    status
                 )
-            """)
+                VALUES (%s)
+                RETURNING run_id, run_date
+            """, (
+                "running",
+            ))
 
-            conn.commit()
+            run_id, run_date = cursor.fetchone()
+
+        conn.commit()
+        return run_id, run_date
+
     finally:
         release_connection(conn)
 
-def create_pipeline_runs_table():
+def finish_pipeline_run(
+    run_id,
+    execution_time_seconds,
+    videos_processed,
+    status
+):
 
     conn = get_connection()
 
@@ -51,16 +58,29 @@ def create_pipeline_runs_table():
         with conn.cursor() as cursor:
 
             cursor.execute("""
-                CREATE TABLE IF NOT EXISTS pipeline_runs (
-                    id SERIAL PRIMARY KEY,
-                    execution_time_seconds DOUBLE PRECISION,
-                    videos_processed INTEGER,
-                    status VARCHAR(20),
-                    run_date TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
-                )
-            """)
+                UPDATE pipeline_runs
+                SET
+                    execution_time_seconds = %s,
+                    videos_processed = %s,
+                    status = %s
+                WHERE run_id = %s
+                RETURNING run_date
+            """, (
+                execution_time_seconds,
+                videos_processed,
+                status,
+                run_id
+            ))
 
-            conn.commit()
+            row = cursor.fetchone()
+
+        conn.commit()
+
+        if row is None:
+            raise ValueError(f"Pipeline run {run_id} does not exist")
+
+        return row[0]
+
     finally:
         release_connection(conn)
 
@@ -82,7 +102,7 @@ def insert_pipeline_run(
                     status
                 )
                 VALUES (%s, %s, %s)
-                RETURNING id, run_date
+                RETURNING run_id, run_date
             """, (
                 execution_time_seconds,
                 videos_processed,
@@ -159,6 +179,25 @@ def get_all_channel_ids():
             cursor.execute("""
                 SELECT channel_id
                 FROM channels
+            """)
+
+            rows = cursor.fetchall()
+
+        return [row[0] for row in rows]
+
+    finally:
+        release_connection(conn)
+
+def get_all_existing_video_ids():
+
+    conn = get_connection()
+
+    try:
+        with conn.cursor() as cursor:
+
+            cursor.execute("""
+                SELECT video_id
+                FROM dim_videos
             """)
 
             rows = cursor.fetchall()

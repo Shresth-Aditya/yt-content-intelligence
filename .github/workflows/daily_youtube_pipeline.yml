@@ -11,7 +11,7 @@ jobs:
   run-pipeline:
     runs-on: ubuntu-24.04
 
-```
+
 environment:
   name: ${{ github.ref_name == 'main' && 'main' || 'staging' }}
 
@@ -41,4 +41,4 @@ steps:
       if [ -f pipeline_summary.md ]; then
         cat pipeline_summary.md >> "$GITHUB_STEP_SUMMARY"
       fi
-```
+

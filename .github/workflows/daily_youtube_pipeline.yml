@@ -2,43 +2,40 @@ name: Daily YouTube Pipeline
 
 on:
   schedule:
-    # Runs every day at 9:00 AM IST
-    # (03:30 UTC)
-  - cron: "30 3 * * *"
+    # Runs every day at 9:00 AM IST (03:30 UTC)
+    - cron: "30 3 * * *"
   workflow_dispatch:
 
 jobs:
   run-pipeline:
     runs-on: ubuntu-24.04
 
+    environment:
+      name: ${{ github.ref_name == 'main' && 'main' || 'staging' }}
 
-environment:
-  name: ${{ github.ref_name == 'main' && 'main' || 'staging' }}
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
 
-steps:
-  - name: Checkout repo
-    uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12.3"
 
-  - name: Set up Python
-    uses: actions/setup-python@v5
-    with:
-      python-version: "3.12.3"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-  - name: Install dependencies
-    run: |
-      python -m pip install --upgrade pip
-      pip install -r requirements.txt
+      - name: Run pipeline
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python main.py
 
-  - name: Run pipeline
-    env:
-      YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
-      DATABASE_URL: ${{ secrets.DATABASE_URL }}
-    run: python main.py
-
-  - name: Publish pipeline summary
-    if: always()
-    run: |
-      if [ -f pipeline_summary.md ]; then
-        cat pipeline_summary.md >> "$GITHUB_STEP_SUMMARY"
-      fi
-
+      - name: Publish pipeline summary
+        if: always()
+        run: |
+          if [ -f pipeline_summary.md ]; then
+            cat pipeline_summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi

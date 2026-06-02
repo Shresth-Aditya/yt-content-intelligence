@@ -1,11 +1,6 @@
 name: Weekly Channel Discovery Pipeline
 
 on:
-  schedule:
-    # Runs every Monday at 9:00 AM IST
-    # (03:30 UTC)
-    - cron: "30 3 * * 1"
-
   workflow_dispatch:
 
 jobs:

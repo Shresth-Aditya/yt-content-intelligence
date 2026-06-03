@@ -88,7 +88,7 @@ def search_videos_for_niche(
     niche,
     published_after,
     published_before,
-    max_results_per_page=20,
+    max_results_per_page=50,
     max_pages=1
 ):
 

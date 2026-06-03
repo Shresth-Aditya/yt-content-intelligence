@@ -3,6 +3,10 @@ import sys
 
 from config import get_niche_queries
 from db.pipeline_run_repository import start_pipeline_run
+from db.pipeline_state_repository import (
+    has_discovery_run_for_date,
+    mark_discovery_run_for_date
+)
 from logger import setup_logger
 from workflows.pipeline_stats import PipelineStats
 from workflows.pipeline_steps import (
@@ -45,9 +49,6 @@ def run_pipeline():
             snapshot_time
         )
 
-        if not niche_queries:
-            raise ValueError("No niche queries configured")
-
         process_existing_video_metrics(
             snapshot_date=snapshot_date,
             snapshot_time=snapshot_time,
@@ -55,14 +56,24 @@ def run_pipeline():
             stats=stats
         )
 
-        discover_process_new_videos(
-            window=window,
-            snapshot_date=snapshot_date,
-            snapshot_time=snapshot_time,
-            niche_queries=niche_queries,
-            run_id=run_id,
-            stats=stats
-        )
+        if has_discovery_run_for_date(snapshot_date):
+            logger.info(
+                "Skipping discovery; it already ran for snapshot_date=%s",
+                snapshot_date
+            )
+        else:
+            if not niche_queries:
+                raise ValueError("No niche queries configured")
+
+            discover_process_new_videos(
+                window=window,
+                snapshot_date=snapshot_date,
+                snapshot_time=snapshot_time,
+                niche_queries=niche_queries,
+                run_id=run_id,
+                stats=stats
+            )
+            mark_discovery_run_for_date(snapshot_date)
 
     except Exception:
         stats.mark_failed()

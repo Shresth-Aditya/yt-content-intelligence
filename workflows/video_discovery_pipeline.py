@@ -9,7 +9,6 @@ def discover_process_new_videos_for_niche(
     niche,
     window,
     snapshot_date,
-    snapshot_time,
     run_id
 ):
 
@@ -29,7 +28,6 @@ def discover_process_new_videos_for_niche(
         metrics_inserted += fetch_process_video_metrics(
             video["video_id"],
             snapshot_date,
-            snapshot_time,
             run_id
         )
 

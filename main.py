@@ -51,7 +51,6 @@ def run_pipeline():
 
         process_existing_video_metrics(
             snapshot_date=snapshot_date,
-            snapshot_time=snapshot_time,
             run_id=run_id,
             stats=stats
         )

@@ -10,7 +10,6 @@ logger = setup_logger()
 
 def process_existing_video_metrics(
     snapshot_date,
-    snapshot_time,
     run_id,
     stats
 ):
@@ -32,7 +31,6 @@ def process_existing_video_metrics(
             stats.videos_processed += fetch_process_video_metrics(
                 video_id,
                 snapshot_date,
-                snapshot_time,
                 run_id
             )
         except Exception as e:
@@ -44,7 +42,6 @@ def process_existing_video_metrics(
 def discover_process_new_videos(
     window,
     snapshot_date,
-    snapshot_time,
     niche_queries,
     run_id,
     stats
@@ -65,7 +62,6 @@ def discover_process_new_videos(
                 niche,
                 window,
                 snapshot_date,
-                snapshot_time,
                 run_id
             )
             stats.new_videos_discovered += discovery_result["videos_discovered"]

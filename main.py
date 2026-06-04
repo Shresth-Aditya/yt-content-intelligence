@@ -67,7 +67,6 @@ def run_pipeline():
             discover_process_new_videos(
                 window=window,
                 snapshot_date=snapshot_date,
-                snapshot_time=snapshot_time,
                 niche_queries=niche_queries,
                 run_id=run_id,
                 stats=stats

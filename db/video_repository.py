@@ -73,8 +73,6 @@ def insert_video_daily_metrics(metrics, run_id):
                 run_id
             )
             VALUES %s
-            ON CONFLICT (video_id, snapshot_date)
-            DO NOTHING
         """
 
         data = [

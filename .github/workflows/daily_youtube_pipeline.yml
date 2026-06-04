@@ -11,13 +11,12 @@ jobs:
     runs-on: ubuntu-24.04
   
     environment:
-      name: staging
+      name: ${{ github.ref_name == 'main' && 'main' || 'staging' }}
 
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
-        with:
-          ref: staging
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

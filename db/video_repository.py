@@ -63,7 +63,7 @@ def insert_video_daily_metrics(metrics, run_id):
     try:
 
         query = """
-            INSERT INTO fact_video_daily_metrics (
+            INSERT INTO fact_video_snapshots (
                 video_id,
                 views,
                 likes,

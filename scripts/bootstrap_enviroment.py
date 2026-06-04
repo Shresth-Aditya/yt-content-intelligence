@@ -133,12 +133,12 @@ def main():
             conflict_columns=["video_id"]
         )
 
-        logger.info("Copying fact_video_daily_metrics")
+        logger.info("Copying fact_video_snapshots")
 
         total_rows_copied += copy_table(
             source_cursor,
             target_cursor,
-            table_name="fact_video_daily_metrics",
+            table_name="fact_video_snapshots",
             columns=[
                 "video_id",
                 "views",

@@ -36,8 +36,13 @@ def process_existing_video_metrics(
         except Exception as e:
             stats.video_errors += 1
             stats.mark_partial_success()
-            logger.error(f"Error with {video_id}: {e}")
+            logger.exception("Error while processing video %s", video_id)
 
+            if hasattr(e, "response") and e.response is not None:
+                logger.error(
+                    "YouTube API response: %s",
+                    e.response.text
+                )
 
 def discover_process_new_videos(
     window,

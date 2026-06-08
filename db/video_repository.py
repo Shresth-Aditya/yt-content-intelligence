@@ -177,3 +177,29 @@ def get_all_existing_video_ids():
 
     finally:
         release_connection(conn)
+
+
+def get_existing_video_ids(video_ids):
+
+    video_ids = list(set(video_ids))
+
+    if not video_ids:
+        return []
+
+    conn = get_connection()
+
+    try:
+        with conn.cursor() as cursor:
+
+            cursor.execute("""
+                SELECT video_id
+                FROM dim_videos
+                WHERE video_id = ANY(%s)
+            """, (video_ids,))
+
+            rows = cursor.fetchall()
+
+        return [row[0] for row in rows]
+
+    finally:
+        release_connection(conn)

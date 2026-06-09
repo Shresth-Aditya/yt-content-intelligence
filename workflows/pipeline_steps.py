@@ -3,9 +3,39 @@ from db.video_repository import get_all_existing_video_ids
 from logger import setup_logger
 from workflows.pipeline_summary import write_markdown_summary
 from workflows.video_discovery_pipeline import discover_process_new_videos_for_niche
-from workflows.video_metrics_pipeline import fetch_process_video_metrics
+from workflows.video_metrics_pipeline import chunk_video_ids, fetch_process_video_metrics
 
 logger = setup_logger()
+
+
+def log_youtube_api_response(error):
+    if hasattr(error, "response") and error.response is not None:
+        logger.error(
+            "YouTube API response: %s", 
+            error.response.text
+        )
+
+
+def retry_video_metrics_individually(
+    video_ids,
+    snapshot_date,
+    run_id,
+    stats
+):
+    for video_id in video_ids:
+        logger.info("Retrying video metrics for video: %s", video_id)
+
+        try:
+            stats.videos_processed += fetch_process_video_metrics(
+                [video_id],
+                snapshot_date,
+                run_id
+            )
+        except Exception as e:
+            stats.video_errors += 1
+            stats.mark_partial_success()
+            logger.exception("Error while processing video %s", video_id)
+            log_youtube_api_response(e)
 
 
 def process_existing_video_metrics(
@@ -24,25 +54,28 @@ def process_existing_video_metrics(
         logger.warning("No existing videos found; skipping existing video metrics step")
         return
 
-    for video_id in video_ids:
-        logger.info(f"\nProcessing video: {video_id}")
-
+    for video_id_batch in chunk_video_ids(video_ids):
+        logger.info(
+            "\nProcessing video metrics batch with %d video(s)",
+            len(video_id_batch)
+        )
         try:
             stats.videos_processed += fetch_process_video_metrics(
-                video_id,
+                video_id_batch,
                 snapshot_date,
                 run_id
             )
         except Exception as e:
-            stats.video_errors += 1
-            stats.mark_partial_success()
-            logger.exception("Error while processing video %s", video_id)
-
-            if hasattr(e, "response") and e.response is not None:
-                logger.error(
-                    "YouTube API response: %s",
-                    e.response.text
-                )
+            logger.exception(
+                "Error while processing video metrics batch; retrying individually"
+            )
+            log_youtube_api_response(e)
+            retry_video_metrics_individually(
+                video_id_batch,
+                snapshot_date,
+                run_id,
+                stats
+            )
 
 def discover_process_new_videos(
     window,

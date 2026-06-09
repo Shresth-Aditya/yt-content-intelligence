@@ -55,15 +55,18 @@ def fetch_channel_videos(
     return raw_data
 
 
-def fetch_video_statistics(video_id):
+def fetch_video_statistics(video_ids):
 
-    logger.info("Fetching statistics for video: %s", video_id)
+    logger.info(
+        "Fetching statistics for %d video(s)",
+        len(video_ids)
+    )
 
     url = f"{BASE_URL}/videos"
 
     params = {
         "key": YOUTUBE_API_KEY,
-        "id": video_id,
+        "id": ",".join(video_ids),
         "part": "statistics"
     }
 

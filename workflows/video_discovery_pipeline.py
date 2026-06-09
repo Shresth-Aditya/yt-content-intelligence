@@ -1,6 +1,6 @@
 from db.channel_repository import upsert_dim_channels
 from db.video_repository import get_existing_video_ids, upsert_dim_videos
-from workflows.video_metrics_pipeline import fetch_process_video_metrics
+from workflows.video_metrics_pipeline import chunk_video_ids, fetch_process_video_metrics
 from youtube_api.youtube_client import search_videos_for_niche
 from youtube_api.youtube_transformers import transform_discovered_videos
 
@@ -35,9 +35,14 @@ def discover_process_new_videos_for_niche(
 
     metrics_inserted = 0
 
-    for video in new_videos:
+    new_video_ids = [
+        video["video_id"]
+        for video in new_videos
+    ]
+
+    for video_id_batch in chunk_video_ids(new_video_ids):
         metrics_inserted += fetch_process_video_metrics(
-            video["video_id"],
+            video_id_batch,
             snapshot_date,
             run_id
         )

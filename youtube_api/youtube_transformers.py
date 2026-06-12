@@ -6,7 +6,7 @@ logger = setup_logger()
 def transform_video_data(raw_data, channel_id):
     videos = []
 
-    for item in raw_data.get("items", []):
+    for item in raw_data["response_body"]["items"]:
 
         if item["id"]["kind"] != "youtube#video":
             continue
@@ -24,10 +24,10 @@ def transform_video_data(raw_data, channel_id):
     return videos
 
 
-def transform_video_statistics(raw_data, snapshot_date, snapshot_time):
+def transform_video_statistics(raw_data, snapshot_date, snapshot_time, source_bronze_id):
     metrics = []
 
-    for item in raw_data.get("items", []):
+    for item in raw_data["response_body"]["items"]:
 
         statistics = item.get("statistics", {})
         logger.debug("Processing video statistics item: %s", item)
@@ -38,17 +38,18 @@ def transform_video_statistics(raw_data, snapshot_date, snapshot_time):
             "likes": int(statistics.get("likeCount", 0)),
             "comments": int(statistics.get("commentCount", 0)),
             "snapshot_date": snapshot_date,
-            "snapshot_time": snapshot_time
+            "snapshot_time": snapshot_time,
+            "source_bronze_id": source_bronze_id
         })
 
     return metrics
 
 
-def transform_discovered_videos(raw_data, niche):
+def transform_discovered_videos(raw_data, niche, source_bronze_id):
     videos_by_id = {}
     channels_by_id = {}
 
-    for item in raw_data.get("items", []):
+    for item in raw_data["response_body"]["items"]:
 
         if item["id"]["kind"] != "youtube#video":
             continue
@@ -59,7 +60,8 @@ def transform_discovered_videos(raw_data, niche):
         channels_by_id[channel_id] = {
             "channel_id": channel_id,
             "channel_name": snippet.get("channelTitle", channel_id),
-            "description": ""
+            "description": "",
+            "source_bronze_id": source_bronze_id
         }
 
         videos_by_id[item["id"]["videoId"]] = {
@@ -68,7 +70,8 @@ def transform_discovered_videos(raw_data, niche):
             "description": snippet.get("description", ""),
             "published_at": snippet["publishedAt"],
             "channel_id": channel_id,
-            "niche": niche
+            "niche": niche,
+            "source_bronze_id": source_bronze_id
         }
 
     return {

@@ -70,7 +70,8 @@ def insert_video_daily_metrics(metrics, run_id):
                 comments,
                 snapshot_date,
                 snapshot_time,
-                run_id
+                run_id,
+                source_bronze_id
             )
             VALUES %s
         """
@@ -83,7 +84,8 @@ def insert_video_daily_metrics(metrics, run_id):
                 metric["comments"],
                 metric["snapshot_date"],
                 metric["snapshot_time"],
-                run_id
+                run_id,
+                metric["source_bronze_id"]
             )
             for metric in metrics
         ]
@@ -119,7 +121,8 @@ def upsert_dim_videos(videos, run_id):
                 published_at,
                 channel_id,
                 niche,
-                run_id
+                run_id,
+                source_bronze_id
             )
             VALUES %s
             ON CONFLICT (video_id)
@@ -129,7 +132,8 @@ def upsert_dim_videos(videos, run_id):
                 published_at = EXCLUDED.published_at,
                 channel_id = EXCLUDED.channel_id,
                 niche = EXCLUDED.niche,
-                run_id = EXCLUDED.run_id
+                run_id = EXCLUDED.run_id,
+                source_bronze_id = EXCLUDED.source_bronze_id
         """
 
         data = [
@@ -140,7 +144,8 @@ def upsert_dim_videos(videos, run_id):
                 video["published_at"],
                 video["channel_id"],
                 video["niche"],
-                run_id
+                run_id,
+                video["source_bronze_id"]
             )
             for video in videos
         ]

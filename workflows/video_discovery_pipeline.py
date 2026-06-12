@@ -1,3 +1,4 @@
+from db.bronze_youtube_api_response_repository import insert_bronze_youtube_api_response
 from db.channel_repository import upsert_dim_channels
 from db.video_repository import get_existing_video_ids, upsert_dim_videos
 from workflows.video_metrics_pipeline import chunk_video_ids, fetch_process_video_metrics
@@ -17,7 +18,13 @@ def discover_process_new_videos_for_niche(
         window["published_after"],
         window["published_before"]
     )
-    transformed = transform_discovered_videos(raw, niche)
+    source_bronze_id = insert_bronze_youtube_api_response(
+        raw,
+        run_id,
+        snapshot_date,
+        None
+    )
+    transformed = transform_discovered_videos(raw, niche, source_bronze_id)
 
     existing_video_ids = set(get_existing_video_ids(
         video["video_id"]

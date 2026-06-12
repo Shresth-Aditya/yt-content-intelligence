@@ -1,3 +1,4 @@
+from db.bronze_youtube_api_response_repository import insert_bronze_youtube_api_response
 from db.video_repository import insert_video_daily_metrics
 from youtube_api.youtube_client import fetch_video_statistics
 from youtube_api.youtube_transformers import transform_video_statistics
@@ -16,6 +17,17 @@ def fetch_process_video_metrics(video_ids, snapshot_date, run_id):
 
     metric_snapshot_time = get_snapshot_time()
     raw = fetch_video_statistics(video_ids)
-    transformed = transform_video_statistics(raw, snapshot_date, metric_snapshot_time)
+    source_bronze_id = insert_bronze_youtube_api_response(
+        raw,
+        run_id,
+        snapshot_date,
+        metric_snapshot_time
+    )
+    transformed = transform_video_statistics(
+        raw,
+        snapshot_date,
+        metric_snapshot_time,
+        source_bronze_id
+    )
     insert_video_daily_metrics(transformed, run_id)
     return len(transformed)

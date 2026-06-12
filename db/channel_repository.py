@@ -92,7 +92,8 @@ def upsert_dim_channels(channels, run_id):
                 channel_id,
                 channel_name,
                 description,
-                run_id
+                run_id,
+                source_bronze_id
             )
             VALUES %s
             ON CONFLICT (channel_id)
@@ -105,7 +106,8 @@ def upsert_dim_channels(channels, run_id):
                     NULLIF(EXCLUDED.description, ''),
                     dim_channels.description
                 ),
-                run_id = EXCLUDED.run_id
+                run_id = EXCLUDED.run_id,
+                source_bronze_id = EXCLUDED.source_bronze_id
         """
 
         data = [
@@ -113,7 +115,8 @@ def upsert_dim_channels(channels, run_id):
                 channel["channel_id"],
                 channel["channel_name"],
                 channel["description"],
-                run_id
+                run_id,
+                channel["source_bronze_id"]
             )
             for channel in channels
         ]

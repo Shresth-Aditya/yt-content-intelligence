@@ -12,6 +12,14 @@ YOUTUBE_API_KEY = os.getenv("YOUTUBE_API_KEY")
 BASE_URL = "https://www.googleapis.com/youtube/v3"
 
 
+def build_safe_params(params):
+    return {
+        key: value
+        for key, value in params.items()
+        if key != "key"
+    }
+
+
 def fetch_channel_videos(
     channel_id,
     published_after,
@@ -52,7 +60,11 @@ def fetch_channel_videos(
         channel_id
     )
 
-    return raw_data
+    return {
+        "endpoint": "search",
+        "request_params": build_safe_params(params),
+        "response_body": raw_data
+    }
 
 
 def fetch_video_statistics(video_ids):
@@ -84,7 +96,11 @@ def fetch_video_statistics(video_ids):
         len(raw_data.get("items", []))
     )
 
-    return raw_data
+    return {
+        "endpoint": "videos",
+        "request_params": build_safe_params(params),
+        "response_body": raw_data
+    }
 
 
 def search_videos_for_niche(
@@ -105,19 +121,21 @@ def search_videos_for_niche(
     url = f"{BASE_URL}/search"
     items = []
     next_page_token = None
+    base_params = {
+        "key": YOUTUBE_API_KEY,
+        "q": niche,
+        "part": "snippet",
+        "type": "video",
+        "maxResults": max_results_per_page,
+        "order": "date",
+        "publishedAfter": published_after,
+        "publishedBefore": published_before
+    }
+    safe_params = build_safe_params(base_params)
 
     for page_number in range(max_pages):
 
-        params = {
-            "key": YOUTUBE_API_KEY,
-            "q": niche,
-            "part": "snippet",
-            "type": "video",
-            "maxResults": max_results_per_page,
-            "order": "date",
-            "publishedAfter": published_after,
-            "publishedBefore": published_before
-        }
+        params = base_params.copy()
 
         if next_page_token:
             params["pageToken"] = next_page_token
@@ -146,5 +164,9 @@ def search_videos_for_niche(
             break
 
     return {
-        "items": items
+        "endpoint": "search",
+        "request_params": safe_params,
+        "response_body": {
+            "items": items
+        }
     }
